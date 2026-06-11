@@ -46,6 +46,7 @@ class SphericalLinearKernel(gpytorch.kernels.RBFKernel):
     :param ard_num_dims: The number of dimensions in the input space.
     :param prior: The hyperprior used for the lengthscales (Not really used for high-dim-qEUBO as we need only linear kernel)
     :param bounds: The bounds of the input space. If a single (min, max) bound is given, it is used for all dimensions.
+    
     """
     #Do not need prior parameter
     has_lengthscale = True

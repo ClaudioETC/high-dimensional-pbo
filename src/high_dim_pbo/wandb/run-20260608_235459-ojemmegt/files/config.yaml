@@ -1,0 +1,70 @@
+_wandb:
+    value:
+        cli_version: 0.27.2
+        e:
+            vjdocs4o0wcyyso2bc7uiutf726u5n68:
+                apple:
+                    ecpuCores: 4
+                    gpuCores: 10
+                    macModel: Mac15,12
+                    memoryGb: 24
+                    name: Apple M3
+                    pcpuCores: 4
+                    ramTotalBytes: "25769803776"
+                    swapTotalBytes: "7516192768"
+                codePath: src/high_dim_pbo/evaluate.py
+                codePathLocal: evaluate.py
+                cpu_count: 8
+                cpu_count_logical: 8
+                disk:
+                    /:
+                        total: "494384795648"
+                        used: "270386302976"
+                email: claudiotorrescantu@gmail.com
+                executable: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/.venv/bin/python3
+                git:
+                    commit: 7ec862ca99ce78171beb16fe84c8b9cc2888a089
+                    remote: https://github.com/ClaudioETC/high-dimensional-pbo.git
+                host: MacBook-Air-de-Emiliano.local
+                memory:
+                    total: "25769803776"
+                os: macOS-15.7.3-arm64-arm-64bit
+                program: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo/evaluate.py
+                python: CPython 3.12.12
+                root: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo
+                startedAt: "2026-06-08T21:54:59.856708Z"
+                writerId: vjdocs4o0wcyyso2bc7uiutf726u5n68
+        m: []
+        python_version: 3.12.12
+        t:
+            "1":
+                - 1
+            "2":
+                - 1
+            "3":
+                - 13
+                - 16
+            "4": 3.12.12
+            "5": 0.27.2
+            "12": 0.27.2
+            "13": darwin-arm64
+acquisition_function:
+    value: qEUBO
+input_dim:
+    value: 6
+likelihood_function:
+    value: noiseless
+mc_samples:
+    value: 64
+model_optimizer:
+    value: Adam
+model_type:
+    value: variational_preferential_gp
+num_algo_queries:
+    value: 50
+num_alternatives:
+    value: 2
+num_init_queries:
+    value: 20
+problem:
+    value: Hartmann6

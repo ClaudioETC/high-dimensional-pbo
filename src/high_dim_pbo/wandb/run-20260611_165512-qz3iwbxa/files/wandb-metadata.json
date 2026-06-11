@@ -1,0 +1,17 @@
+{
+  "os": "macOS-15.7.3-arm64-arm-64bit",
+  "python": "CPython 3.12.12",
+  "startedAt": "2026-06-11T14:55:12.373023Z",
+  "program": "/Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo/evaluate.py",
+  "codePath": "src/high_dim_pbo/evaluate.py",
+  "codePathLocal": "evaluate.py",
+  "git": {
+    "remote": "https://github.com/ClaudioETC/high-dimensional-pbo.git",
+    "commit": "7ec862ca99ce78171beb16fe84c8b9cc2888a089"
+  },
+  "email": "claudiotorrescantu@gmail.com",
+  "root": "/Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo",
+  "host": "MacBook-Air-de-Emiliano.local",
+  "executable": "/Users/emilianotorres/Astudillo_BO/high-dim-qeubo/.venv/bin/python3",
+  "writerId": "8dv7ute6vsgq6fo1pk8vrsuf9e0u4z12"
+}

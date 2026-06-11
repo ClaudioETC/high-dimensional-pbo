@@ -1,0 +1,1 @@
+{"_wandb":{"runtime":615},"max_utility_found":-123.28728485107422,"total_queries_asked":100,"_runtime":615,"_timestamp":1.781183029540011e+09,"_step":81,"iteration":80,"test_accuracy":0.6,"test_nll":0.6760824679567919}

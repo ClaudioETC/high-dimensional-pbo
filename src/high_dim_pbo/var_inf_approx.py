@@ -73,7 +73,7 @@ class VariationalPreferentialGP(GPyTorchModel, ApproximateGP):
                 q=1,
                 seed=0,
             ).squeeze(1)
-            print(inducing_points.dtype)
+            #print(inducing_points.dtype)
             #bounds = bounds.to(torch.float64)
             #train_x is float32 per default; switched initially to float64
             inducing_points = torch.cat([inducing_points, train_x], dim=0)
@@ -91,7 +91,8 @@ class VariationalPreferentialGP(GPyTorchModel, ApproximateGP):
             variational_distribution = CholeskyVariationalDistribution(
                 inducing_points.size(-2)
             )
-            variational_strategy = UnwhitenedVariationalStrategy(
+            #changed UnwhitenedVariationalStrategy to VariatonalStrategy for 
+            variational_strategy = VariationalStrategy(
                 self,
                 inducing_points,
                 variational_distribution,
@@ -103,7 +104,7 @@ class VariationalPreferentialGP(GPyTorchModel, ApproximateGP):
                                                       bounds = bounds.tolist())
         else:
             self.covar_module = covar_module
-        self.likelihood = PreferentialSoftmaxLikelihood(num_alternatives=self.q)
+        self.likelihood = PreferentialSoftmaxLikelihood(num_alternatives=self.q) #could also make it a tunable param
         self.mean_module = ConstantMean()
         # scales = bounds[1, :] - bounds[0, :] DONT NEED THEM
         self._num_outputs = 1

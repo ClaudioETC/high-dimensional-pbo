@@ -1,0 +1,75 @@
+_wandb:
+    value:
+        cli_version: 0.27.2
+        e:
+            gbp08y8ej8yhxo23fq5bicdnypx1oy4k:
+                codePath: src/high_dim_pbo/evaluate.py
+                codePathLocal: evaluate.py
+                email: claudiotorrescantu@gmail.com
+                executable: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/.venv/bin/python3
+                git:
+                    commit: 7ec862ca99ce78171beb16fe84c8b9cc2888a089
+                    remote: https://github.com/ClaudioETC/high-dimensional-pbo.git
+                host: MacBook-Air-de-Emiliano.local
+                os: macOS-15.7.3-arm64-arm-64bit
+                program: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo/evaluate.py
+                python: CPython 3.12.12
+                root: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo
+                startedAt: "2026-06-11T14:54:45.927569Z"
+                writerId: gbp08y8ej8yhxo23fq5bicdnypx1oy4k
+        m: []
+        python_version: 3.12.12
+        t:
+            "1":
+                - 1
+                - 2
+                - 3
+                - 5
+                - 12
+                - 53
+            "2":
+                - 1
+                - 2
+                - 3
+                - 5
+                - 12
+                - 53
+            "3":
+                - 13
+                - 16
+            "4": 3.12.12
+            "5": 0.27.2
+            "12": 0.27.2
+            "13": darwin-arm64
+acqf_raw_samples:
+    value: 360
+acqf_restarts:
+    value: 12
+acquisition_function:
+    value: qEUBO
+adam_epochs:
+    value: 150
+adam_lr:
+    value: 0.05
+input_dim:
+    value: 256
+mc_samples:
+    value: 64
+model_optimizer:
+    value: L-BFGS-B
+model_type:
+    value: variational_preferential_gp
+noise:
+    value: noiseless
+num_algo_queries:
+    value: 10
+num_alternatives:
+    value: 2
+num_init_queries:
+    value: 20
+num_test_points:
+    value: 100
+problem:
+    value: Guacamol_GuacamolObjective_adip
+use_whitening:
+    value: false

@@ -17,29 +17,62 @@ from scipy.optimize import minimize
 from torch import Tensor
 from torch.distributions import Bernoulli, Normal, Gumbel
 
-from src.models.variational_preferential_gp import VariationalPreferentialGP
+#from src.models.variational_preferential_gp import VariationalPreferentialGP
+from var_inf_approx import VariationalPreferentialGP
 
-
+# In qeubo_utils.py
 def fit_model(
     queries: Tensor,
     responses: Tensor,
     model_type: str,
-    likelihood: Optional[str] = "logit",
+    model_optimizer: str = "Adam",
+    use_whitening: bool = True,
+    adam_lr: float = 0.05,       
+    adam_epochs: int = 150       
 ):
     if model_type == "variational_preferential_gp":
-        model = VariationalPreferentialGP(queries, responses)
+        # Pass parameters to GP
+        model = VariationalPreferentialGP(queries, responses, use_withening=use_whitening)
+        model = model.to(torch.float64)
         model.train()
         model.likelihood.train()
+        
         mll = VariationalELBO(
             likelihood=model.likelihood,
             model=model,
             num_data=2 * model.num_data,
         )
-        mll = fit_gpytorch_mll(mll)
+        
+        if model_optimizer == "Adam":
+            optimizer = torch.optim.Adam([
+                {'params': model.parameters()},
+                {'params': model.likelihood.parameters()},
+            ], lr=adam_lr)
+            
+            for _ in range(adam_epochs):
+                optimizer.zero_grad()
+                output = model(model.train_inputs[0])
+                loss = -mll(output, model.train_targets)
+                loss.backward()
+                optimizer.step()
+                
+        elif model_optimizer == "L-BFGS-B":
+            mll = fit_gpytorch_mll(mll)
+
+            # Compute the final ELBO after convergence
+            model.eval()
+            model.likelihood.eval()
+            with torch.no_grad():
+                output = model(model.train_inputs[0])
+                # No negative sign needed here, mll returns the true ELBO
+                final_elbo = mll(output, model.train_targets).item() 
+                print(final_elbo)
+                #return model, final_elbo
+            
         model.eval()
         model.likelihood.eval()
+        
     return model
-
 
 def generate_initial_data(
     num_queries: int,
@@ -203,6 +236,50 @@ def estimate_error_rate(noise_scale, obj_vals, true_comps, noise_type):
     error_rate = 1 - correct_prob.mean()
     return error_rate.item()
 
-
 def error_rate_loss(x, obj_vals, true_comps, target_error, noise_type):
     return abs(estimate_error_rate(x, obj_vals, true_comps, noise_type) - target_error)
+
+def classify(model, num_queries, alts_per_query, alts_dim, obj_func):
+    """_summary_
+
+    Args:
+        model (Class): _description_
+        num_queries (int): _description_
+        alts_per_query (int): _description_
+        alts_dim (int): dimension 
+        benchmark (Class): Class encapsulating benchmark of choice
+
+    Returns:
+        _type_: _description_
+    """
+    model.eval()
+    model.likelihood.eval()
+    test_queries = generate_random_queries(num_queries, alts_per_query, alts_dim)
+    # test_points = test_points.view(num_queries * alts_per_query, alts_dim)
+    obj_vals = get_obj_vals(test_queries, obj_func)
+    true_labels = torch.argmax(obj_vals, dim=-1)
+
+    # 3. Get Model Predictions
+    # Flatten to 2D for the model forward pass
+    test_points_2d = test_queries.view(num_queries * alts_per_query, alts_dim)
+    
+    with torch.no_grad():
+        # Get the latent GP predictions (returns a MultivariateNormal)
+        f_preds = model(test_points_2d)
+        
+        # Pass through the softmax likelihood to get probabilities
+        # This draws MC samples and returns a Categorical distribution
+        pred_dist = model.likelihood(f_preds)
+        
+        # Average the probabilities across the MC sample dimension (dim=0)
+        pred_probs = pred_dist.probs.mean(dim=0)
+
+    # 4. Calculate Accuracy and NLL
+    predictions = torch.argmax(pred_probs, dim=-1)
+    correct = (predictions == true_labels).sum().item()
+    accuracy = correct / num_queries
+
+    # NLL (Cross-Entropy) penalizes the model for being confidently wrong
+    nll = torch.nn.functional.cross_entropy(pred_probs, true_labels).item()
+
+    return accuracy, nll
