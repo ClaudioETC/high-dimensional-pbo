@@ -1,0 +1,91 @@
+_wandb:
+    value:
+        cli_version: 0.27.2
+        e:
+            d5h9fj3ovjsbihq2fbrw97xlc9hnyo3d:
+                apple:
+                    ecpuCores: 4
+                    gpuCores: 10
+                    macModel: Mac15,12
+                    memoryGb: 24
+                    name: Apple M3
+                    pcpuCores: 4
+                    ramTotalBytes: "25769803776"
+                    swapTotalBytes: "9663676416"
+                codePath: src/high_dim_pbo/evaluate.py
+                codePathLocal: evaluate.py
+                cpu_count: 8
+                cpu_count_logical: 8
+                disk:
+                    /:
+                        total: "494384795648"
+                        used: "278751444992"
+                email: claudiotorrescantu@gmail.com
+                executable: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/.venv/bin/python3
+                git:
+                    commit: c446f78e11530f7223497a6abbd01333ebe6cb25
+                    remote: https://github.com/ClaudioETC/high-dimensional-pbo.git
+                host: MacBook-Air-de-Emiliano.local
+                memory:
+                    total: "25769803776"
+                os: macOS-15.7.3-arm64-arm-64bit
+                program: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo/evaluate.py
+                python: CPython 3.12.12
+                root: /Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo
+                startedAt: "2026-06-11T23:40:24.026424Z"
+                writerId: d5h9fj3ovjsbihq2fbrw97xlc9hnyo3d
+        m: []
+        python_version: 3.12.12
+        t:
+            "1":
+                - 1
+                - 2
+                - 3
+                - 5
+                - 12
+                - 53
+            "2":
+                - 1
+                - 2
+                - 3
+                - 5
+                - 12
+                - 53
+            "3":
+                - 16
+            "4": 3.12.12
+            "5": 0.27.2
+            "12": 0.27.2
+            "13": darwin-arm64
+acqf_raw_samples:
+    value: 360
+acqf_restarts:
+    value: 12
+acquisition_function:
+    value: qEUBO
+adam_epochs:
+    value: 150
+adam_lr:
+    value: 0.05
+input_dim:
+    value: 60
+mc_samples:
+    value: 64
+model_optimizer:
+    value: L-BFGS-B
+model_type:
+    value: variational_preferential_gp
+noise:
+    value: noiseless
+num_algo_queries:
+    value: 480
+num_alternatives:
+    value: 2
+num_init_queries:
+    value: 20
+num_test_points:
+    value: 100
+problem:
+    value: Rover
+use_whitening:
+    value: false

@@ -1,0 +1,1 @@
+{"_timestamp":1.781259126084058e+09,"_step":151,"_wandb":{"runtime":5906},"iteration":150,"max_utility_found":0.883644163608551,"test_nll":0.6381911928421085,"_runtime":5906,"total_queries_asked":170,"test_accuracy":0.66}

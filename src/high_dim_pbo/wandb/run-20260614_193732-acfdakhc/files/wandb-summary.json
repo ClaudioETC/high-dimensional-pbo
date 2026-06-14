@@ -1,0 +1,1 @@
+{"max_utility_found":-0.8488229817777644,"iteration":100,"_runtime":331,"_wandb":{"runtime":331},"_timestamp":1.7814589854490528e+09,"max_utility_found in queries":0.9965221008922436,"outputscale":12.668651054583641,"true_utility_at_post_mean":0.9967733142027009,"model_final_elbo":-0.2944707964708322,"total_queries_asked":120,"mean_lengthscale":0.3289012888554956,"_step":100}

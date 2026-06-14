@@ -1,0 +1,38 @@
+{
+  "os": "macOS-15.7.3-arm64-arm-64bit",
+  "python": "CPython 3.12.12",
+  "startedAt": "2026-06-12T07:45:33.170654Z",
+  "program": "/Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo/evaluate.py",
+  "codePath": "src/high_dim_pbo/evaluate.py",
+  "codePathLocal": "evaluate.py",
+  "git": {
+    "remote": "https://github.com/ClaudioETC/high-dimensional-pbo.git",
+    "commit": "c446f78e11530f7223497a6abbd01333ebe6cb25"
+  },
+  "email": "claudiotorrescantu@gmail.com",
+  "root": "/Users/emilianotorres/Astudillo_BO/high-dim-qeubo/src/high_dim_pbo",
+  "host": "MacBook-Air-de-Emiliano.local",
+  "executable": "/Users/emilianotorres/Astudillo_BO/high-dim-qeubo/.venv/bin/python3",
+  "cpu_count": 8,
+  "cpu_count_logical": 8,
+  "disk": {
+    "/": {
+      "total": "494384795648",
+      "used": "279919439872"
+    }
+  },
+  "memory": {
+    "total": "25769803776"
+  },
+  "apple": {
+    "name": "Apple M3",
+    "ecpuCores": 4,
+    "pcpuCores": 4,
+    "gpuCores": 10,
+    "memoryGb": 24,
+    "swapTotalBytes": "9663676416",
+    "ramTotalBytes": "25769803776",
+    "macModel": "Mac15,12"
+  },
+  "writerId": "nalg3j8hw6u5fb8s4jqzez2zdi8tokn6"
+}

@@ -1,0 +1,1 @@
+{"test_nll":0.7553374164825031,"max_utility_found":0.39808282256126404,"_step":101,"_timestamp":1.781266809820561e+09,"total_queries_asked":120,"_runtime":1567,"_wandb":{"runtime":1567},"iteration":100,"test_accuracy":0.41}

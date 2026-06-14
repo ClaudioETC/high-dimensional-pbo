@@ -8,7 +8,7 @@ from typing import Optional
 
 import math
 import torch
-from botorch.acquisition import AcquisitionFunction
+from botorch.acquisition import AcquisitionFunction, PosteriorMean
 from botorch.generation.gen import get_best_candidates
 from botorch.fit import fit_gpytorch_mll
 from botorch.optim.optimize import optimize_acqf
@@ -16,7 +16,6 @@ from gpytorch.mlls.variational_elbo import VariationalELBO
 from scipy.optimize import minimize
 from torch import Tensor
 from torch.distributions import Bernoulli, Normal, Gumbel
-
 #from src.models.variational_preferential_gp import VariationalPreferentialGP
 from var_inf_approx import VariationalPreferentialGP
 
@@ -28,12 +27,13 @@ def fit_model(
     model_optimizer: str = "Adam",
     use_whitening: bool = True,
     adam_lr: float = 0.05,       
-    adam_epochs: int = 150       
+    adam_epochs: int = 150,
+    kernel=None
 ):
     if model_type == "variational_preferential_gp":
         # Pass parameters to GP
-        model = VariationalPreferentialGP(queries, responses, use_withening=use_whitening)
-        model = model.to(torch.float64)
+        model = VariationalPreferentialGP(queries, responses, use_withening=use_whitening, covar_module = kernel)
+        model = model.to(dtype=torch.float64, device=queries.device)
         model.train()
         model.likelihood.train()
         
@@ -53,8 +53,11 @@ def fit_model(
                 optimizer.zero_grad()
                 output = model(model.train_inputs[0])
                 loss = -mll(output, model.train_targets)
+                mean_val_gp = output.mean #gpytorch syntax allows us to easily compute the mean
                 loss.backward()
                 optimizer.step()
+            
+            final_elbo = -loss.item()
                 
         elif model_optimizer == "L-BFGS-B":
             mll = fit_gpytorch_mll(mll)
@@ -66,13 +69,13 @@ def fit_model(
                 output = model(model.train_inputs[0])
                 # No negative sign needed here, mll returns the true ELBO
                 final_elbo = mll(output, model.train_targets).item() 
-                print(final_elbo)
+                #print(final_elbo)
                 #return model, final_elbo
             
         model.eval()
         model.likelihood.eval()
         
-    return model
+    return model, final_elbo
 
 def generate_initial_data(
     num_queries: int,
@@ -283,3 +286,23 @@ def classify(model, num_queries, alts_per_query, alts_dim, obj_func):
     nll = torch.nn.functional.cross_entropy(pred_probs, true_labels).item()
 
     return accuracy, nll
+
+def post_mean_max(model, 
+                  obj_func,
+                  bounds, 
+                  num_points,
+                  num_restarts: int,
+                  raw_samples: int
+                  ):
+
+    post_mean_gp = PosteriorMean(model)
+    #batch size param (num_points) is 1 because we only want 1 point; the max
+    post_max = optimize_acqf_and_get_suggested_query(post_mean_gp,
+                                                     bounds,
+                                                     num_points,
+                                                     num_restarts,
+                                                     raw_samples)
+    #print(post_max.type)
+    obj_val_at_max_post_mean_func = obj_func(post_max).item()
+    # print(obj_val_at_max_post_mean_func.type)
+    return obj_val_at_max_post_mean_func

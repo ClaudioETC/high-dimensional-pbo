@@ -28,7 +28,7 @@ from torch import Tensor
 # from src.models.likelihoods.preferential_softmax_likelihood import (
 #     PreferentialSoftmaxLikelihood,
 # )
-from softmax_likelihood import (
+from likelihoods import (
     PreferentialSoftmaxLikelihood,
 )
 
@@ -99,11 +99,22 @@ class VariationalPreferentialGP(GPyTorchModel, ApproximateGP):
                 learn_inducing_locations=False,
             )
         super().__init__(variational_strategy)
-        if covar_module is None:
+        if covar_module == "spherical":
             self.covar_module = SphericalLinearKernel(ard_num_dims = self.input_dim, 
                                                       bounds = bounds.tolist())
+        elif covar_module == "RBF":
+            #scales = bounds[1, :] - bounds[0, :]
+            scales = bounds[:, 1] - bounds[:, 0]
+            self.covar_module = ScaleKernel(
+                RBFKernel(
+                    ard_num_dims=self.input_dim,
+                    lengthscale_prior=GammaPrior(3.0, 6.0 / scales),
+                ),
+                outputscale_prior=GammaPrior(2.0, 0.15),
+            )
         else:
             self.covar_module = covar_module
+
         self.likelihood = PreferentialSoftmaxLikelihood(num_alternatives=self.q) #could also make it a tunable param
         self.mean_module = ConstantMean()
         # scales = bounds[1, :] - bounds[0, :] DONT NEED THEM
@@ -120,4 +131,3 @@ class VariationalPreferentialGP(GPyTorchModel, ApproximateGP):
     def num_outputs(self) -> int:
         r"""The number of outputs of the model."""
         return 1
-

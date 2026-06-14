@@ -1,0 +1,1 @@
+{"true_utility_at_post_mean":0.37936564606871803,"model_final_elbo":-0.3548081713685202,"_timestamp":1.781456030758414e+09,"_runtime":1401,"test_nll":0.6137649722072576,"total_queries_asked":120,"test_accuracy":0.69,"_step":101,"max_utility_found in queries":0.45635353122277245,"_wandb":{"runtime":1401},"max_utility_found":-0.8488229817777644,"iteration":100}
