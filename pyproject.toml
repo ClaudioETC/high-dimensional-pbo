@@ -21,13 +21,18 @@ dependencies = [
     "botorch>=0.17.2",
     "fastapi==0.115.6",
     "gpytorch>=1.15.2",
+    "guacamol>=0.5.2",
     "jax>=0.10.1",
+    "jaxtyping>=0.3.10",
     "numpy>=2.4.6",
     "pymc>=6.0.0",
+    "rdkit>=2026.3.3",
     "scipy>=1.17.1",
+    "selfies>=2.2.0",
     "torch==2.6.0",
     "typer==0.15.1",
     "uvicorn==0.34.0",
+    "wandb>=0.27.2",
 ]
 
 [dependency-groups]

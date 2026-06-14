@@ -1,3 +1,4 @@
+import argparse
 import torch
 import numpy as np
 import wandb
@@ -6,7 +7,14 @@ from vanilla_qeubo import qExpectedUtilityOfBestOption
 from botorch.sampling import SobolQMCNormalSampler
 import scipy
 
-# Custom wrapper utility
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", type=int, default = 42)
+args = parser.parse_args()
+
+#setting seeds
+torch.manual_seed(args.seed)
+np.random.seed(args.seed)
+
 from wrappers import BenchmarkWrapper
 
 from qeubo_utils import (
@@ -32,11 +40,13 @@ def run_clean_bo_experiment():
     wandb.init(
         entity="claudiotorrescantu-danmarks-tekniske-universitet-dtu",
         project="high-dim-pbo-qeubo",
+        group=f"{obj_wrapper.display_name}_qEUBO_RBF",
+        name=f"{obj_wrapper.display_name}_qEUBO_RBF;trial_seed_{args.seed}",
         config={
             "problem": obj_wrapper.display_name,
             "input_dim": obj_wrapper.dim,
             "num_init_queries": 20, #consider N<D, N>D and N~~D
-            "num_algo_queries": 100,
+            "num_algo_queries": 150,
             "num_alternatives": 2,               
             "acquisition_function": "qEUBO",
             "model_type": "variational_preferential_gp",
@@ -50,7 +60,8 @@ def run_clean_bo_experiment():
             "acqf_raw_samples": 30 * obj_wrapper.dim * 2,#num_alternatives last #was 360 because of Hartmann6 hardcoded # Raw samples for L-BFGS-B init
             "num_test_points": 1000,
             "kernel": "RBF" , #alternatives are spherical or other of choice
-        }
+            "seed": args.seed,
+                }
     )
     
     cfg = wandb.config
