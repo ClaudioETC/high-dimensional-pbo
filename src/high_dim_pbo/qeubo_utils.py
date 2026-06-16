@@ -7,6 +7,7 @@
 from typing import Optional
 
 import math
+from xmlrpc.client import Boolean
 import torch
 from botorch.acquisition import AcquisitionFunction, PosteriorMean
 from botorch.generation.gen import get_best_candidates
@@ -292,7 +293,7 @@ def post_mean_max(model,
                   bounds, 
                   num_points,
                   num_restarts: int,
-                  raw_samples: int
+                  raw_samples: int,
                   ):
 
     post_mean_gp = PosteriorMean(model)
@@ -304,5 +305,4 @@ def post_mean_max(model,
                                                      raw_samples)
     #print(post_max.type)
     obj_val_at_max_post_mean_func = obj_func(post_max).item()
-    # print(obj_val_at_max_post_mean_func.type)
     return obj_val_at_max_post_mean_func

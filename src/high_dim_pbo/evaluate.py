@@ -1,6 +1,8 @@
 import argparse
+#from guacamol_task import benchmark_suites
 import torch
 import numpy as np
+import math
 import wandb
 from botorch.acquisition.analytic import PosteriorMean
 from vanilla_qeubo import qExpectedUtilityOfBestOption
@@ -31,7 +33,7 @@ scipy.histogram = np.histogram
 torch.manual_seed(42)
 
 # Change this to any wrapper from wrappers.py
-BENCHMARK_SELECTION = "Hartmann6" 
+BENCHMARK_SELECTION = "Alpine1" 
 
 # Instantiate the dynamic wrapper
 obj_wrapper = BenchmarkWrapper(BENCHMARK_SELECTION, guacamol_task_id="adip")
@@ -61,6 +63,7 @@ def run_clean_bo_experiment():
             "num_test_points": 1000,
             "kernel": "RBF" , #alternatives are spherical or other of choice
             "seed": args.seed,
+            "log10scale": True
                 }
     )
     
@@ -72,7 +75,7 @@ def run_clean_bo_experiment():
         num_queries=cfg.num_init_queries,
         num_alternatives=cfg.num_alternatives,
         input_dim=cfg.input_dim,
-        obj_func=obj_wrapper,  # <--- Dynamically called here
+        obj_func=obj_wrapper,  # <
         noise_type=cfg.noise,
         noise_level=0.0,
         add_baseline_point=False,
@@ -120,9 +123,12 @@ def run_clean_bo_experiment():
             bounds=obj_wrapper.bounds, # uniform [0,1] bounds
             num_points=1,
             num_restarts=6 * obj_wrapper.dim,
-            raw_samples=180 * obj_wrapper.dim
+            raw_samples=180 * obj_wrapper.dim,
         )
-        
+        regret = obj_wrapper.max - posterior_max
+        if cfg.log10scale == True:
+            log_regret = math.log10(regret)
+    
         # Setup the Acquisition Function
         sampler = SobolQMCNormalSampler(sample_shape=torch.Size([cfg.mc_samples]))
         acq_func = qExpectedUtilityOfBestOption(model=model, sampler=sampler)
@@ -149,6 +155,7 @@ def run_clean_bo_experiment():
         current_max_utility = obj_vals.max().item()
         print(f"Max Utility Found So Far: {current_max_utility:.4f}")
         print(f"True Utility at GP's Max Mean: {posterior_max:.4f}")
+        print(f"Log Regret of Mean Posterior argmax: {log_regret:.4f}")
 
         wandb.log({
             "iteration": current_step,
@@ -170,10 +177,18 @@ def run_clean_bo_experiment():
     print(f"Final Classification Accuracy: {accuracy * 100:.2f}%")
     print(f"Final Negative Log-Likelihood: {nll:.4f}")
     
-    wandb.log({
+    if cfg.log10scale == True:
+        wandb.log({
         "test_accuracy": accuracy, 
-        "test_nll": nll
-    })
+        "test_nll": nll,
+        "Regret": log_regret
+        })
+    else:
+        wandb.log({
+        "test_accuracy": accuracy, 
+        "test_nll": nll,
+        "Log10-Regret": log_regret
+        })
 
     wandb.finish()
     print("Experiment Complete")
