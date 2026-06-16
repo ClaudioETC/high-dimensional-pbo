@@ -163,7 +163,7 @@ def run_clean_bo_experiment():
             "true_utility_at_post_mean": posterior_max,
             "model_final_elbo": end_elbo,
             "total_queries_asked": cfg.num_init_queries + current_step
-
+            "regret": regret
         })
     
     # Classification
@@ -182,13 +182,13 @@ def run_clean_bo_experiment():
         wandb.log({
         "test_accuracy": accuracy, 
         "test_nll": nll,
-        "Log-Regret": regret
+        "Final Log-Regret": regret
         })
     else:
         wandb.log({
         "test_accuracy": accuracy, 
         "test_nll": nll,
-        "Regret": regret
+        "Final Regret": regret
         })
 
     wandb.finish()
