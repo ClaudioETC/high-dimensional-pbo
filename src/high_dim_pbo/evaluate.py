@@ -127,7 +127,7 @@ def run_clean_bo_experiment():
         )
         regret = obj_wrapper.max - posterior_max
         if cfg.log10scale == True:
-            log_regret = math.log10(regret)
+            regret = math.log10(regret)
     
         # Setup the Acquisition Function
         sampler = SobolQMCNormalSampler(sample_shape=torch.Size([cfg.mc_samples]))
@@ -155,7 +155,7 @@ def run_clean_bo_experiment():
         current_max_utility = obj_vals.max().item()
         print(f"Max Utility Found So Far: {current_max_utility:.4f}")
         print(f"True Utility at GP's Max Mean: {posterior_max:.4f}")
-        print(f"Log Regret of Mean Posterior argmax: {log_regret:.4f}")
+        print(f"Log Regret of Mean Posterior argmax: {regret:.4f}")
 
         wandb.log({
             "iteration": current_step,
@@ -163,6 +163,7 @@ def run_clean_bo_experiment():
             "true_utility_at_post_mean": posterior_max,
             "model_final_elbo": end_elbo,
             "total_queries_asked": cfg.num_init_queries + current_step
+
         })
     
     # Classification
@@ -181,13 +182,13 @@ def run_clean_bo_experiment():
         wandb.log({
         "test_accuracy": accuracy, 
         "test_nll": nll,
-        "Regret": log_regret
+        "Log-Regret": regret
         })
     else:
         wandb.log({
         "test_accuracy": accuracy, 
         "test_nll": nll,
-        "Log10-Regret": log_regret
+        "Regret": regret
         })
 
     wandb.finish()
