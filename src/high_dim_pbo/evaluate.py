@@ -162,7 +162,7 @@ def run_clean_bo_experiment():
             "max_utility_found in queries": current_max_utility,
             "true_utility_at_post_mean": posterior_max,
             "model_final_elbo": end_elbo,
-            "total_queries_asked": cfg.num_init_queries + current_step
+            "total_queries_asked": cfg.num_init_queries + current_step,
             "regret": regret
         })
     
