@@ -82,7 +82,7 @@ class BenchmarkWrapper:
         elif self.name == "Hartmann":
             hartmann = Hartmann()
             objective_X = -hartmann.evaluate_true(X_tensor)
-            return torch.tensor(objective_X, dtype=torch.float64)
+            return objective_X.clone().detach().to(torch.float64)
 
         elif self.name == "Alpine1":
             # Scale X from [0, 1] to [-10.0, 10.0]
