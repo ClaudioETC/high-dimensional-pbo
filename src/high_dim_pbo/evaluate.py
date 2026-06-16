@@ -33,7 +33,7 @@ scipy.histogram = np.histogram
 torch.manual_seed(42)
 
 # Change this to any wrapper from wrappers.py
-BENCHMARK_SELECTION = "Hartmann" 
+BENCHMARK_SELECTION = "Alpine1" 
 
 # Instantiate the dynamic wrapper
 obj_wrapper = BenchmarkWrapper(BENCHMARK_SELECTION, guacamol_task_id="adip")
@@ -161,6 +161,7 @@ def run_clean_bo_experiment():
             "true_utility_at_post_mean": posterior_max,
             "model_final_elbo": end_elbo,
             "total_queries_asked": cfg.num_init_queries + current_step,
+            "log-regret": log_regret,
             "regret": regret
         })
     
@@ -180,7 +181,6 @@ def run_clean_bo_experiment():
     wandb.log({
     "test_accuracy": accuracy, 
     "test_nll": nll,
-    "Final Log-Regret": regret,
     "regret": regret,
     "log10 regret": log_regret
     })
