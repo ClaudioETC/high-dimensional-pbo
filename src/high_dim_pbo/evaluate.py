@@ -33,7 +33,7 @@ scipy.histogram = np.histogram
 torch.manual_seed(42)
 
 # Change this to any wrapper from wrappers.py
-BENCHMARK_SELECTION = "Alpine1" 
+BENCHMARK_SELECTION = "Hartmann" 
 
 # Instantiate the dynamic wrapper
 obj_wrapper = BenchmarkWrapper(BENCHMARK_SELECTION, guacamol_task_id="adip")
@@ -63,7 +63,6 @@ def run_clean_bo_experiment():
             "num_test_points": 1000,
             "kernel": "RBF" , #alternatives are spherical or other of choice
             "seed": args.seed,
-            "log10scale": True
                 }
     )
     
@@ -126,8 +125,7 @@ def run_clean_bo_experiment():
             raw_samples=180 * obj_wrapper.dim,
         )
         regret = obj_wrapper.max - posterior_max
-        if cfg.log10scale == True:
-            regret = math.log10(regret)
+        log_regret = math.log10(regret)
     
         # Setup the Acquisition Function
         sampler = SobolQMCNormalSampler(sample_shape=torch.Size([cfg.mc_samples]))
@@ -178,18 +176,14 @@ def run_clean_bo_experiment():
     print(f"Final Classification Accuracy: {accuracy * 100:.2f}%")
     print(f"Final Negative Log-Likelihood: {nll:.4f}")
     
-    if cfg.log10scale == True:
-        wandb.log({
-        "test_accuracy": accuracy, 
-        "test_nll": nll,
-        "Final Log-Regret": regret
-        })
-    else:
-        wandb.log({
-        "test_accuracy": accuracy, 
-        "test_nll": nll,
-        "Final Regret": regret
-        })
+
+    wandb.log({
+    "test_accuracy": accuracy, 
+    "test_nll": nll,
+    "Final Log-Regret": regret,
+    "regret": regret,
+    "log10 regret": log_regret
+    })
 
     wandb.finish()
     print("Experiment Complete")
