@@ -8,17 +8,8 @@ from botorch.acquisition.analytic import PosteriorMean
 from vanilla_qeubo import qExpectedUtilityOfBestOption
 from botorch.sampling import SobolQMCNormalSampler
 import scipy
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--seed", type=int, default = 42)
-args = parser.parse_args()
-
-#setting seeds
-torch.manual_seed(args.seed)
-np.random.seed(args.seed)
-
+import os
 from wrappers import BenchmarkWrapper
-
 from qeubo_utils import (
     generate_initial_data,
     fit_model,
@@ -28,13 +19,19 @@ from qeubo_utils import (
     classify,
     post_mean_max
 )
-
 scipy.histogram = np.histogram
-torch.manual_seed(42)
 
-# Change this to any wrapper from wrappers.py
-BENCHMARK_SELECTION = "Alpine1" 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--dataset", type=str)
+parser.add_argument("--seed", type=int)
+args = parser.parse_args()
+
+#setting seeds
+torch.manual_seed(args.seed)
+np.random.seed(args.seed)
+
+BENCHMARK_SELECTION = args.dataset
 # Instantiate the dynamic wrapper
 obj_wrapper = BenchmarkWrapper(BENCHMARK_SELECTION, guacamol_task_id="adip")
 
@@ -153,7 +150,8 @@ def run_clean_bo_experiment():
         current_max_utility = obj_vals.max().item()
         print(f"Max Utility Found So Far: {current_max_utility:.4f}")
         print(f"True Utility at GP's Max Mean: {posterior_max:.4f}")
-        print(f"Log Regret of Mean Posterior argmax: {regret:.4f}")
+        print(f"Regret of Mean Posterior argmax: {regret:.4f}")
+        print(f"Log-Regret of Mean Posterior argmax: {log_regret:.4f}")
 
         wandb.log({
             "iteration": current_step,
