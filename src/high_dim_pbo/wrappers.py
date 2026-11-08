@@ -19,8 +19,15 @@ class BenchmarkWrapper:
             self.benchmark = GuacamolObjective(guacamol_task_id=task_id)
             self.dim = self.benchmark.dim
             self.display_name = f"Guacamol_{self.benchmark.__class__.__name__}_{task_id}"
+            self.max = 1 #taken from "Local Latent Space Bayesian Optimization over Structured Inputs" section 5.2
             
-            
+        elif benchmark_name == "svm":
+            from svm import SVM
+            self.benchmark = SVM()
+            self.dim = self.benchmark.dim
+            self.display_name = "svm"
+            self.max = 0 #negated RMSE maximum 
+
         elif benchmark_name == "Rover":
             from rover import Rover
             self.benchmark = Rover(0.0)
@@ -54,6 +61,9 @@ class BenchmarkWrapper:
             raise ValueError(f"Unknown benchmark: {benchmark_name}")
             
         # Define the unified [0, 1] bounds for BoTorch optimization
+        if benchmark_name == "Guacamol":
+            self.bounds = self.benchmark.bounds.to(torch.float64)
+
         self.bounds = torch.tensor([[0.0] * self.dim, [1.0] * self.dim], dtype=torch.float64)
 
     def __call__(self, X_tensor):
@@ -63,9 +73,9 @@ class BenchmarkWrapper:
         """
         if "Guacamol" in self.name:
             # Scale from [0, 1] to VAE latent space [-8, 8]
-            X_scaled = (X_tensor * 16.0) - 8.0
+            #X_scaled = (X_tensor * 16.0) - 8.0
             with torch.no_grad():
-                y_tensor = self.benchmark(X_scaled)
+                y_tensor = self.benchmark(X_tensor)
             return y_tensor.to(torch.float64)
 
         elif self.name == "Rover":
@@ -93,3 +103,9 @@ class BenchmarkWrapper:
                 y_tensor = -torch.abs(X_unnorm * torch.sin(X_unnorm) + 0.1 * X_unnorm).sum(dim=-1)
                 
             return y_tensor.to(torch.float64)
+        
+        elif self.name == "svm":
+            with torch.no_grad():
+                # evaluate_true returns raw RMSE. Negate it for BoTorch maximization.
+                objective_X = -self.benchmark.evaluate_true(X_tensor)
+            return objective_X.clone().detach().to(torch.float64)

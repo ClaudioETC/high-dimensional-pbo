@@ -694,7 +694,12 @@ class GuacamolObjective(SyntheticTestFunction):
         self.vae.eval()
         # sample molecular string form VAE decoder
         with torch.no_grad():
-            sample = self.vae.sample(z=z.reshape(-1, 2, 128))
+            #sample = self.vae.sample(z=z.reshape(-1, 2, 128))
+            #issue is our input was double (float64) and VAE attention weight matrices are float32
+            #simply cast input to float32 and do everything else in float64
+            #float64 is used on GP's for Cholesky decomp and matrix inversions; 
+            #we are also not passing any gradients
+            sample = self.vae.sample(z=z.to(torch.float32).reshape(-1, 2, 128))
         # grab decoded selfies strings
         decoded_selfies = [self.dataobj.decode(sample[i]) for i in range(sample.size(-2))]
         # decode selfies strings to smiles strings (SMILES is needed format for oracle)

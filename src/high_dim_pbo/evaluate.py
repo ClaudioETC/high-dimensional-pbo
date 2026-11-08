@@ -17,15 +17,27 @@ from qeubo_utils import (
     generate_responses,
     optimize_acqf_and_get_suggested_query,
     classify,
-    post_mean_max
+    post_mean_max,
+    get_acquisition_function,
 )
 scipy.histogram = np.histogram
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str)
-parser.add_argument("--seed", type=int)
+parser.add_argument("--dataset", type=str, required=False, default="svm", help="Dataset name")
+parser.add_argument("--seed", type=int, default=42, help="Seed Integer")
+parser.add_argument("--kernel", type=str, default="spherical", help="Kernel type (e.g., spherical, RBF)")
+parser.add_argument("--acq_func", type=str, default="qEUBO", help="Acquisition function (e.g., qEUBO, info_gain)")
+parser.add_argument(
+    "--info_gain_mode",
+    type=str,
+    default="entropy",
+    choices=["entropy", "imbalance", "practical_mi"],
+    help="Mode for Info_Gain_AF (entropy, imbalance, practical_mi)",
+)
+parser.add_argument("--lambda_snr", type=float, default=1.0, help="Weight lambda for SNR in practical_mi mode")
 args = parser.parse_args()
+print(f"Kernel: {args.kernel}, Acq Func: {args.acq_func}")
 
 #setting seeds
 torch.manual_seed(args.seed)
@@ -36,18 +48,26 @@ BENCHMARK_SELECTION = args.dataset
 obj_wrapper = BenchmarkWrapper(BENCHMARK_SELECTION, guacamol_task_id="adip")
 
 def run_clean_bo_experiment():
+    group_name = f"{obj_wrapper.display_name}_{args.acq_func}_{args.kernel}"
+    run_name = f"{obj_wrapper.display_name}_{args.acq_func}_{args.kernel};trial_seed_{args.seed}"
+    if "info_gain" in args.acq_func.lower():
+        group_name += f"_{args.info_gain_mode}"
+        run_name += f"_{args.info_gain_mode}"
+
     wandb.init(
         entity="claudiotorrescantu-danmarks-tekniske-universitet-dtu",
         project="high-dim-pbo-qeubo",
-        group=f"{obj_wrapper.display_name}_qEUBO_RBF",
-        name=f"{obj_wrapper.display_name}_qEUBO_RBF;trial_seed_{args.seed}",
+        group=group_name,
+        name=run_name,
         config={
             "problem": obj_wrapper.display_name,
             "input_dim": obj_wrapper.dim,
             "num_init_queries": 20, #consider N<D, N>D and N~~D
             "num_algo_queries": 150,
             "num_alternatives": 2,               
-            "acquisition_function": "qEUBO",
+            "acquisition_function": args.acq_func,
+            "info_gain_mode": args.info_gain_mode,
+            "lambda_snr": args.lambda_snr,
             "model_type": "variational_preferential_gp",
             "noise": "noiseless", #check qeubo_utils.py; specifically corrupt_obj_vals()
             "use_whitening": False,       # True = Inducing-Point VI, False = Vanilla VI
@@ -58,9 +78,9 @@ def run_clean_bo_experiment():
             "acqf_restarts": obj_wrapper.dim * 2,     #again, hard-coded because of hartmann 6   # L-BFGS-B (optimizer in general) restarts
             "acqf_raw_samples": 30 * obj_wrapper.dim * 2,#num_alternatives last #was 360 because of Hartmann6 hardcoded # Raw samples for L-BFGS-B init
             "num_test_points": 1000,
-            "kernel": "RBF" , #alternatives are spherical or other of choice
+            "kernel": args.kernel , #alternatives are spherical or other of choice
             "seed": args.seed,
-                }
+        }
     )
     
     cfg = wandb.config
@@ -125,8 +145,13 @@ def run_clean_bo_experiment():
         log_regret = math.log10(regret)
     
         # Setup the Acquisition Function
-        sampler = SobolQMCNormalSampler(sample_shape=torch.Size([cfg.mc_samples]))
-        acq_func = qExpectedUtilityOfBestOption(model=model, sampler=sampler)
+        acq_func = get_acquisition_function(
+            acq_func_name=cfg.acquisition_function,
+            model=model,
+            mc_samples=cfg.mc_samples,
+            info_gain_mode=cfg.info_gain_mode,
+            lambda_snr=cfg.lambda_snr,
+        )
         
         # Optimize the Acquisition Function 
         new_query = optimize_acqf_and_get_suggested_query(

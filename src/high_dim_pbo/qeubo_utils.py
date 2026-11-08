@@ -13,12 +13,14 @@ from botorch.acquisition import AcquisitionFunction, PosteriorMean
 from botorch.generation.gen import get_best_candidates
 from botorch.fit import fit_gpytorch_mll
 from botorch.optim.optimize import optimize_acqf
+from botorch.sampling import SobolQMCNormalSampler
 from gpytorch.mlls.variational_elbo import VariationalELBO
 from scipy.optimize import minimize
 from torch import Tensor
 from torch.distributions import Bernoulli, Normal, Gumbel
-#from src.models.variational_preferential_gp import VariationalPreferentialGP
 from var_inf_approx import VariationalPreferentialGP
+from vanilla_qeubo import qExpectedUtilityOfBestOption, ExpectedUtilityOfBestOption
+from info_gain_acq_func import Info_Gain_AF, InformationGainAcquisitionFunction
 
 # In qeubo_utils.py
 def fit_model(
@@ -303,6 +305,49 @@ def post_mean_max(model,
                                                      num_points,
                                                      num_restarts,
                                                      raw_samples)
-    #print(post_max.type)
     obj_val_at_max_post_mean_func = obj_func(post_max).item()
     return obj_val_at_max_post_mean_func
+
+
+def get_acquisition_function(
+    acq_func_name: str,
+    model,
+    mc_samples: int = 64,
+    info_gain_mode: str = "entropy",
+    lambda_snr: float = 1.0,
+) -> AcquisitionFunction:
+    """Factory helper to construct acquisition functions (qEUBO or Info_Gain_AF).
+
+    Args:
+        acq_func_name: Name of the acquisition function ("qEUBO" or "info_gain").
+        model: Fitted GP model.
+        mc_samples: Number of MC samples (for MC acquisition functions like qEUBO).
+        info_gain_mode: Mode for Info_Gain_AF ("entropy", "imbalance", or "practical_mi").
+        lambda_snr: SNR regularizer weight for Info_Gain_AF in practical_mi mode.
+
+    Returns:
+        Instantiated AcquisitionFunction.
+    """
+    name_lower = acq_func_name.lower().replace("-", "_")
+    if name_lower in ("qeubo", "eubo", "q_eubo", "expected_utility_of_best_option"):
+        sampler = SobolQMCNormalSampler(sample_shape=torch.Size([mc_samples]))
+        return qExpectedUtilityOfBestOption(model=model, sampler=sampler)
+    elif "info_gain" in name_lower or name_lower in ("ig", "infogain", "information_gain"):
+        # Auto-detect mode if specified in the name (e.g. info_gain_practical_mi)
+        mode = info_gain_mode
+        if "practical_mi" in name_lower:
+            mode = "practical_mi"
+        elif "imbalance" in name_lower:
+            mode = "imbalance"
+        elif "entropy" in name_lower:
+            mode = "entropy"
+        return Info_Gain_AF(
+            model=model,
+            mode=mode,
+            lambda_snr=lambda_snr,
+        )
+    else:
+        raise ValueError(
+            f"Unknown acquisition function '{acq_func_name}'. "
+            f"Supported options: 'qEUBO', 'info_gain' (with modes 'entropy', 'imbalance', 'practical_mi')."
+        )
