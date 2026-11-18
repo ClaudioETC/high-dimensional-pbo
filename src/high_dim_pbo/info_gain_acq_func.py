@@ -12,8 +12,6 @@ Reference:
 
 from __future__ import annotations
 
-import math
-
 import torch
 from botorch.acquisition import AcquisitionFunction
 from botorch.models.model import Model
@@ -71,17 +69,8 @@ class Info_Gain_AF(AcquisitionFunction):
         self.eps = eps
         self.register_buffer("lambda_snr", torch.tensor(lambda_snr, dtype=torch.float64))
 
-    @t_batch_mode_transform()
-    def forward(self, X: Tensor) -> Tensor:
-        r"""Evaluate the acquisition function on a batch of query pairs.
-
-        Args:
-            X: A `batch_shape x 2 x d` tensor where each entry along the
-               q-dimension contains a pairwise candidate `[z1, z2]`.
-
-        Returns:
-            A `batch_shape`-dim tensor of acquisition values.
-        """
+    def _pairwise_statistics(self, X: Tensor) -> tuple[Tensor, Tensor]:
+        """Posterior mean and variance of f(z1) - f(z2)."""
         if X.shape[-2] != 2:
             raise ValueError(
                 f"X must have exactly 2 alternatives per query (got {X.shape[-2]}). "
@@ -105,6 +94,66 @@ class Info_Gain_AF(AcquisitionFunction):
             - Sigma[..., 1, 0]
         )
         v = torch.clamp(v, min=1e-12)
+        return m, v
+
+    @staticmethod
+    def _probability_from_statistics(m: Tensor, v: Tensor) -> Tensor:
+        """P(a Gaussian difference is positive), without entropy clipping."""
+        #basically we compute the CDF of the log-normal distribution; would be cool to revise the erf part
+        return 0.5 * (1.0 + torch.erf(m / torch.sqrt(2.0 * v)))
+
+    def _binary_entropy(self, p: Tensor) -> Tensor:
+        # Clamp only for logarithms; reported probabilities retain their full range.
+        p = torch.clamp(p, min=self.eps, max=1.0 - self.eps)
+        return -p * torch.log2(p) - (1.0 - p) * torch.log2(1.0 - p)
+
+    @t_batch_mode_transform()
+    def pairwise_probability(
+        self, X: Tensor, include_observation_noise: bool = True
+    ) -> Tensor:
+        r"""Return the probability that the first alternative wins each pair.
+
+        Accepts `2 x d` or `batch_shape x 2 x d` inputs. By default, returns
+        the acquisition's unit-noise probit approximation, Phi(m / sqrt(v + 1)).
+        With ``include_observation_noise=False``, returns the latent posterior
+        mass P(f(z1) > f(z2)) = Phi(m / sqrt(v)). These are distinct from the
+        fitted model's softmax observation probabilities.
+        """
+        m, v = self._pairwise_statistics(X)
+        return self._probability_from_statistics(
+            m, v + 1 if include_observation_noise else v
+        )
+
+    @torch.no_grad()
+    def query_diagnostics(self, X: Tensor) -> dict[str, Tensor]:
+        """Evaluate balance for each selected pair using the current posterior.
+
+        Call before observing the response or refitting the model. Each metric
+        has shape `batch_shape` (or `[1]` for a single `2 x d` pair). Imbalance
+        is |p - 0.5|, with zero indicating a balanced query. Pair distance helps
+        identify queries that are balanced because their alternatives coincide.
+        """
+        if X.ndim == 2:
+            X = X.unsqueeze(0)
+        m, v = self._pairwise_statistics(X)
+        p = self._probability_from_statistics(m, v + 1)
+        latent_p = self._probability_from_statistics(m, v)
+        return {
+            "p_first": p,
+            "p_second": 1.0 - p,
+            "imbalance": (p - 0.5).abs(),
+            "entropy_bits": self._binary_entropy(p),
+            "latent_p_first": latent_p,
+            "latent_imbalance": (latent_p - 0.5).abs(),
+            "mean_difference": m,
+            "variance_difference": v,
+            "pair_distance": torch.linalg.vector_norm(X[..., 0, :] - X[..., 1, :], dim=-1),
+        }
+
+    @t_batch_mode_transform()
+    def forward(self, X: Tensor) -> Tensor:
+        r"""Evaluate acquisition values for `batch_shape x 2 x d` query pairs."""
+        m, v = self._pairwise_statistics(X)
 
         if self.mode == "practical_mi":
             lambda_snr = self.lambda_snr.to(dtype=X.dtype, device=X.device)
@@ -112,18 +161,11 @@ class Info_Gain_AF(AcquisitionFunction):
             snr_term = lambda_snr * torch.log1p(v)
             return balance_term + snr_term
 
-        # For "entropy" and "imbalance" modes:
-        # Effective standard deviation of the difference under probit observation model
-        eff_sigma = torch.sqrt(v + 1)
-        z = m / eff_sigma
-        # Normal CDF using erf for stable gradients: Phi(z) = 0.5 * (1 + erf(z / sqrt(2)))
-        p = 0.5 * (1.0 + torch.erf(z / math.sqrt(2.0)))
+        p = self._probability_from_statistics(m, v + 1)
         p = torch.clamp(p, min=self.eps, max=1.0 - self.eps)
 
         if self.mode == "entropy":
-            # Binary entropy in bits: H(p) = -p log2(p) - (1-p) log2(1-p)
-            entropy = -p * torch.log2(p) - (1.0 - p) * torch.log2(1.0 - p)
-            return entropy
+            return self._binary_entropy(p)
 
         elif self.mode == "imbalance":
             # Negative squared imbalance: - (p - 0.5)^2 (maximized at p = 0.5)

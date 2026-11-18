@@ -10,6 +10,7 @@ from botorch.sampling import SobolQMCNormalSampler
 import scipy
 import os
 from wrappers import BenchmarkWrapper
+from info_gain_acq_func import Info_Gain_AF
 from qeubo_utils import (
     generate_initial_data,
     fit_model,
@@ -160,7 +161,24 @@ def run_clean_bo_experiment():
             batch_size=cfg.num_alternatives,
             num_restarts=cfg.acqf_restarts,       
             raw_samples=cfg.acqf_raw_samples,    
-        ).unsqueeze(0)      
+        ).unsqueeze(0)
+
+        # Measure the selected query under the posterior that selected it.
+        query_metrics = {}
+        if isinstance(acq_func, Info_Gain_AF):
+            diagnostics = acq_func.query_diagnostics(new_query)
+            query_metrics = {
+                f"selected_query/{name}": value.item()
+                for name, value in diagnostics.items()
+            }
+            print(
+                "Selected query: "
+                f"P(first)={diagnostics['p_first'].item():.6f}, "
+                f"P(second)={diagnostics['p_second'].item():.6f}, "
+                f"|p-0.5|={diagnostics['imbalance'].item():.6f}, "
+                f"latent P(first)={diagnostics['latent_p_first'].item():.6f}, "
+                f"pair distance={diagnostics['pair_distance'].item():.6f}"
+            )
         
         # Query the True Function and simulate choice using the wrapper
         new_obj_vals = get_obj_vals(new_query, obj_wrapper) # <
@@ -185,7 +203,8 @@ def run_clean_bo_experiment():
             "model_final_elbo": end_elbo,
             "total_queries_asked": cfg.num_init_queries + current_step,
             "log-regret": log_regret,
-            "regret": regret
+            "regret": regret,
+            **query_metrics,
         })
     
     # Classification
